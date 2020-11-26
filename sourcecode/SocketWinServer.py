@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
-# -*- coding: gbk -*-
-#import socket
-#import multiprocessing
 import os
-import gevent
 import threading
-from gevent import socket
-from gevent import monkey;monkey.patch_all()
+import socket
+#import multiprocessing
 
 def write_txt_to(length, open_file, set_code, BUFSIZE, clientSocket):
     f=open(open_file,'ab')
@@ -64,13 +60,11 @@ def monitor(pathlist, ADDRlist):
                 if info[i]=='None':
                     info[i]=None
             if info[1]=='txt' and info[0]:
-                t_txt=threading.Thread(target=write_txt_to, args=(info[0], pathlist['open_filename'],
-                    ADDRlist['set_code'],ADDRlist['txtSIZE'],ADDRlist['clientSocket'],))
-                t_txt.start()
+                write_txt_to(info[0], pathlist['open_filename'],
+                    ADDRlist['set_code'],ADDRlist['txtSIZE'],ADDRlist['clientSocket'])
             elif info[1]=='pic' and info[0] and info[2]:
-                t_pic=threading.Thread(target=write_pic_to, args=(info[0], pathlist['open_pic_dir'],
-                    info[2], ADDRlist['set_code'], ADDRlist['picSIZE'],ADDRlist['clientSocket'],))
-                t_pic.start()
+                write_pic_to(info[0], pathlist['open_pic_dir'],
+                    info[2], ADDRlist['set_code'], ADDRlist['picSIZE'],ADDRlist['clientSocket'])
             else:
                 print('error >>>',info)
         else:
@@ -143,17 +137,11 @@ def init_setting():
             print('已经配置默认条件......')
             break
         if not os.path.exists(pathlist['dos_pic_dir']):
-            try:
-                os.makedirs(pathlist['dos_pic_dir'])
-                print('正在生成%s目录' %pathlist['dos_pic_dir'])
-            except:
-                print('error1>>')
+            os.makedirs(pathlist['dos_pic_dir'])
+            print('正在生成%s目录' %pathlist['dos_pic_dir'])
         if not os.path.exists(pathlist['dos_filename']):
-            try:
-                os.system('type nul >%s' %pathlist['dos_filename'])
-                print('正在生成%s文件' %pathlist['dos_filename'])
-            except:
-                print('error2>>')
+            open(pathlist['open_filename'],'w').close()
+            print('正在生成%s文件' %pathlist['open_filename'])
 
 def main():
     t_lines=[]

@@ -185,15 +185,10 @@ def init_setting():
             pathlist['dos_pic_dir']='D:\\QQdata\\xx11\\'
             break
         if not os.path.exists(pathlist['dos_pic_dir']):
-            try:
-                os.makedirs(pathlist['dos_pic_dir'])
-            except:
-                pass
+            os.makedirs(pathlist['dos_pic_dir'])
         if not os.path.exists(pathlist['dos_filename']):
-            try:
-                os.system('type nul >%s' %pathlist['dos_filename'])
-            except:
-                pass
+            open(pathlist['open_filename'], 'w').close()
+
 #主要的监控集
 def runhook():
     global pathlist
