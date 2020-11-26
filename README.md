@@ -27,13 +27,9 @@
 #关于源码操作稍微复杂点，感兴趣可以往下看。
 #如果想看图文教程，则上我的博客：https://www.cnblogs.com/eternalnight/
 # 1.先用python3 运行SocketWinServer.py 
-#导入的库列表1.os, 2.gevent, 3.threading. 其中gevent是第三方库
-#gevent安装方式。在windows或linux终端输入 >> pip install gevent
 #输入服务端号，就是你本机IP，或域名。
 #生成一个名为Monitor_config.txt配置文件，接下来就等待客户端回传
 # 2.python3 在目标机子运行 SocketWinClient.py
-#导入的库1.os,2.time,3.gevent,4.threading
-#与服务端同理只需要执行 pip install gevent 安装这个库即可
 #弹窗版会提示输入服务端IP和端口号，输入如上一致。
 #则会在当前目录生成一个名为Msocket的目录将监控程序放进去。
 #原理很简单，Socket客户端会监控在Msocket目录下的QQdata\xx11和QQdata\Monitor_log.txt
