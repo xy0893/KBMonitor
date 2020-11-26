@@ -75,7 +75,7 @@ def monitor(pathlist, ADDRlist):
                 print('error >>>',info)
         else:
             print('接收的数据不完整')
-        #ADDRlist['clientSocket'].close()
+        ADDRlist['clientSocket'].close()
 def init_setting():
     pathlist={'open_filename':'', 'pic_name':'', 'open_pic_dir':'', 'dos_filename':'',
             'dos_pic_dir':'', 'dos_config':'', 'open_config': '', 'pic_save_to':''}
