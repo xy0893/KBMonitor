@@ -129,9 +129,8 @@ def init_setting():
     print('正在检测配置文件{}'.format('.'*4))
     ADDRlist['picSIZE'],ADDRlist['txtSIZE']=8192,1024
     ADDRlist['set_code']='gbk' #中文标准码
-    lhome=os.path.abspath('.'+'\\Msocket')
+    lhome=os.path.abspath('.')
     lhomelist=lhome.split('\\')
-    backpath='..\\'
     pathlist['dos_filename']=lhome+'\\QQdata\\Monitor_log.txt'
     pathlist['dos_pic_dir']=lhome+'\\QQdata\\xx11\\'
     for n in range(len(lhomelist)):
@@ -184,10 +183,10 @@ def init_setting():
             print('成功找到监控文件和目录')
             return pathlist, ADDRlist
         elif times==5:
-            pathlist['open_filename']='D:/Msocket/QQdata/Monitor_log.txt'
-            pathlist['open_pic_dir']='D:/Msocket/QQdata/xx11/'
-            pathlist['dos_filename']='D:\\Msocket\\QQdata\\Monitor_log.txt'
-            pathlist['dos_pic_dir']='D:\\Msocket\\QQdata\\xx11\\'
+            pathlist['open_filename']='D:/QQdata/Monitor_log.txt'
+            pathlist['open_pic_dir']='D:/QQdata/xx11/'
+            pathlist['dos_filename']='D:\\QQdata\\Monitor_log.txt'
+            pathlist['dos_pic_dir']='D:\\QQdata\\xx11\\'
             print('已经配置默认条件......')
         else:
             print('无法找到配置文件和目录')
