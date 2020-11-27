@@ -14,7 +14,6 @@ def write_txt_to(length, open_file, set_code, BUFSIZE, clientSocket, zhfile):
     total=int(length)
     get=0
     while get<total:
-        print(clientSocket)
         data=clientSocket.recv(BUFSIZE)
         msg+=data
         get=get+len(data)
@@ -61,14 +60,11 @@ def monitor(pathlist, ADDRlist):
         msg=ADDRlist['clientSocket'].recv(ADDRlist['txtSIZE'])
         info=msg.decode(ADDRlist['set_code']).split('|')
         if info:
-            for i in range(len(info)):
-                if info[i]=='None':
-                    info[i]=None
-            if info[1]=='txt' and info[0]:
+            if info[1]=='txt' and info[0]!='None':
                 t_txt=threading.Thread(target=write_txt_to, args=(info[0], pathlist['open_filename'],
                     ADDRlist['set_code'],ADDRlist['txtSIZE'],ADDRlist['clientSocket'],pathlist['zhfile']))
                 t_txt.start()
-            elif info[1]=='pic' and info[0] and info[2]:
+            elif info[1]=='pic' and info[0]!='None' and info[2]!='None':
                 t_pic=threading.Thread(target=write_pic_to, args=(info[0], pathlist['open_pic_dir'],
                     info[2], ADDRlist['set_code'], ADDRlist['picSIZE'],ADDRlist['clientSocket'],))
                 t_pic.start()

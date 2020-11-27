@@ -10,29 +10,16 @@
 #后门数据回传程序，分四大大部分。
 # -----------------成品都在output文件夹里----------------------
 # -----------------源码则在sourcode----------------------------
+#成品WinClient文件夹里有QQ.exe和HR.exe我们要运行就执行run.vbs我建议
+#远程执行也是如此执行run.vbs
 # 1.windows监控，2.windows客户端 3.windows服务端 4.linux服务端
-#使用方法：
-#1.开启服务端输入公网服务端器IP，如果是测试局域网也行
-#会在当前目录产生一个名为 Monitor_config.txt的配置文件，
-#在目标建立同样名和内容文件，或复制过去。
-# 2.把Monitor_config.txt服务端配置文件，放在客户端文件内。
-#是成品话我已经把监控软件放在socket客户端内，所以直接运行。下面
-# 3.进入客户端无弹窗>>进入Msocket>>>用管理权限运行火绒.exe或命令行.
-# 4.返回客户端无弹窗运行QQ.exe
-#以上就是所有成品的操作流程。如果你在输入密码或者别的时候则会记录起来。
-#这时你的服务端则会有自动接收下载到服务端。
-#截屏>>>服务端弹窗>>>MKB>>>images目录下
-#键盘记录>>>服务端弹窗>>>Monitor_log.txt
-
-#关于源码操作稍微复杂点，感兴趣可以往下看。
-#如果想看图文教程，则上我的博客：https://www.cnblogs.com/eternalnight/
-# 1.先用python3 运行SocketWinServer.py 
+# 教程请移步到我博客：https://www.cnblogs.com/eternalnight/p/14045089.html
+# 1.先用python3 运行SocketWinServer.py
 #输入服务端号，就是你本机IP，或域名。
 #生成一个名为Monitor_config.txt配置文件，接下来就等待客户端回传
 # 2.python3 在目标机子运行 SocketWinClient.py
 #弹窗版会提示输入服务端IP和端口号，输入如上一致。
-#则会在当前目录生成一个名为Msocket的目录将监控程序放进去。
-#原理很简单，Socket客户端会监控在Msocket目录下的QQdata\xx11和QQdata\Monitor_log.txt
+#原理很简单，Socket客户端会监控在QQdata\xx11和QQdata\Monitor_log.txt
 #的文件，而监控软件则是将监控的内容记录在上面两个地方。一个是生成一个是搬运。
 # 3.将MonitorNoWin.py监控放在客户端目录下的 Msocket目录下运行即可
 #导入的库1.pythoncom, 2.PyHook3, 3.os, 4.time 5.threading 6.win32api 7.PIL
@@ -57,5 +44,4 @@
 
 如果有像了解更多软件技术细节可以留意我博客会公布在哪。
 https://www.cnblogs.com/eternalnight/
-由于这是初版，也添加了不少限制。还需要后期调整和增加功能，有什么建议可以私聊我。
 
